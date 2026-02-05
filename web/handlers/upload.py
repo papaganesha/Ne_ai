@@ -1,5 +1,3 @@
-# web/handlers/upload.py
-
 from perception.upload_handler import handle_upload as ph_handle_upload
 from processing.processor import process_event
 from cognition.learner import decide, learn
