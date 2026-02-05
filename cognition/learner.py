@@ -1,20 +1,17 @@
 """
-NE-AI V1 — COGNIÇÃO E APRENDIZADO
-Arquivo: cognition/learner.py
+NE-AI V1 — INTEGRAÇÃO PERCEPÇÃO → PROCESSAMENTO → LEARNER
+Arquivo: cognition/learner.py (V1 finalizado para integração)
 ================================
 
-VERSÃO ATUALIZADA — COM PERSISTÊNCIA
+Este módulo agora funciona integrado com o processamento de eventos brutos.
+Todos os eventos da percepção (tela, vídeo, upload, texto) passam pelo pipeline de processamento
+antes de chegar aqui.
 
-Este módulo representa o CÉREBRO COGNITIVO da V1.
-
-Agora ele:
-- Aprende
-- Pergunta
-- Reforça
-- SALVA conhecimento em disco
-- CARREGA conhecimento ao iniciar
-
-Nada aqui executa ações.
+Responsabilidades:
+- Decidir aprender ou perguntar
+- Aprender incrementalmente
+- Reforço humano
+- Persistência de memória
 """
 
 # =========================
@@ -31,7 +28,6 @@ from memory.store import load_memory, save_memory
 # MEMÓRIA (CARREGADA DO DISCO)
 # =========================
 
-# Ao importar o módulo, a memória já é carregada
 MEMORY_STORE = load_memory()
 
 # =========================
@@ -40,14 +36,12 @@ MEMORY_STORE = load_memory()
 
 def calculate_relevance(data: Dict[str, Any]) -> float:
     """
-    Mede o quão importante é a informação.
+    Mede quão relevante é a informação recebida.
     """
-    if data.get("type") == "text":
-        return min(1.0, len(data.get("data", "")) / 100)
-
-    if data.get("type") == "vision":
+    if data.get("type") == "text_signal":
+        return min(1.0, len(data.get("tokens", [])) / 100)
+    if data.get("type") == "visual_signal":
         return 0.5
-
     return 0.3
 
 # =========================
@@ -89,12 +83,12 @@ def decide(data: Dict[str, Any]) -> Dict[str, Any]:
 
 def learn(data: Dict[str, Any]):
     """
-    Salva novo conhecimento e persiste em disco.
+    Salva novo conhecimento processado e persiste em disco.
     """
     knowledge = {
         "id": str(uuid.uuid4()),
         "type": data.get("type"),
-        "content": data.get("data"),
+        "content": data.get("features", data.get("tokens")),
         "confidence": data.get("confidence"),
         "relevance": data.get("relevance"),
         "times_seen": 1
@@ -125,11 +119,18 @@ def reinforce(knowledge_id: str, positive: bool = True):
     save_memory(MEMORY_STORE)
 
 # =========================
-# TESTE ISOLADO
+# TESTE DE INTEGRAÇÃO
 # =========================
 
 if __name__ == "__main__":
-    sample = {"type": "text", "data": "Botão iniciar", "confidence": 0.7}
+    # Simulando evento processado (vindo do pipeline de processamento)
+    sample = {
+        "type": "text_signal",
+        "tokens": ["botao", "iniciar"],
+        "confidence": 0.7,
+        "source": "manual"
+    }
+
     decision = decide(sample)
 
     if decision["action"] == "learn":
