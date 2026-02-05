@@ -3,52 +3,47 @@ NE-AI V1 — COGNIÇÃO E APRENDIZADO
 Arquivo: cognition/learner.py
 ================================
 
+VERSÃO ATUALIZADA — COM PERSISTÊNCIA
+
 Este módulo representa o CÉREBRO COGNITIVO da V1.
 
-Aqui o sistema:
-- Avalia relevância
-- Calcula confiança
-- Decide aprender ou perguntar
-- Armazena conhecimento
+Agora ele:
+- Aprende
+- Pergunta
+- Reforça
+- SALVA conhecimento em disco
+- CARREGA conhecimento ao iniciar
 
-IMPORTANTE:
-- Não executa ações
-- Não automatiza nada
-- Apenas aprende e entende
-
-Tudo é incremental e observável.
+Nada aqui executa ações.
 """
 
 # =========================
 # IMPORTAÇÕES
 # =========================
 
-import uuid                     # IDs únicos para conhecimento
-from typing import Dict, Any    # Tipagem clara
-import math                     # Cálculos simples
+import uuid                     # IDs únicos
+from typing import Dict, Any
+
+# Persistência
+from memory.store import load_memory, save_memory
 
 # =========================
-# MEMÓRIA SIMPLES (V1)
+# MEMÓRIA (CARREGADA DO DISCO)
 # =========================
 
-# Armazenamento em memória (depois vira persistente)
-MEMORY_STORE = []
+# Ao importar o módulo, a memória já é carregada
+MEMORY_STORE = load_memory()
 
 # =========================
-# FUNÇÃO: RELEVÂNCIA
+# RELEVÂNCIA
 # =========================
 
 def calculate_relevance(data: Dict[str, Any]) -> float:
     """
-    Avalia o quão relevante é a informação.
-
-    Na V1:
-    - Texto longo tende a ser mais relevante
-    - Frames sempre começam neutros
+    Mede o quão importante é a informação.
     """
     if data.get("type") == "text":
-        length = len(data.get("data", ""))
-        return min(1.0, length / 100)
+        return min(1.0, len(data.get("data", "")) / 100)
 
     if data.get("type") == "vision":
         return 0.5
@@ -56,7 +51,7 @@ def calculate_relevance(data: Dict[str, Any]) -> float:
     return 0.3
 
 # =========================
-# FUNÇÃO: CONFIANÇA
+# CONFIANÇA
 # =========================
 
 def calculate_confidence(relevance: float, base_confidence: float) -> float:
@@ -66,14 +61,12 @@ def calculate_confidence(relevance: float, base_confidence: float) -> float:
     return max(0.0, min(1.0, (relevance + base_confidence) / 2))
 
 # =========================
-# FUNÇÃO: DECISÃO
+# DECISÃO COGNITIVA
 # =========================
 
 def decide(data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Decide se o sistema:
-    - Aprende
-    - Pergunta
+    Decide se aprende ou pergunta ao humano.
     """
     relevance = calculate_relevance(data)
     confidence = calculate_confidence(relevance, data.get("confidence", 0))
@@ -88,18 +81,15 @@ def decide(data: Dict[str, Any]) -> Dict[str, Any]:
             "payload": data
         }
 
-    return {
-        "action": "learn",
-        "payload": data
-    }
+    return {"action": "learn", "payload": data}
 
 # =========================
-# FUNÇÃO: APRENDER
+# APRENDER
 # =========================
 
 def learn(data: Dict[str, Any]):
     """
-    Armazena conhecimento aprendido.
+    Salva novo conhecimento e persiste em disco.
     """
     knowledge = {
         "id": str(uuid.uuid4()),
@@ -111,16 +101,17 @@ def learn(data: Dict[str, Any]):
     }
 
     MEMORY_STORE.append(knowledge)
+    save_memory(MEMORY_STORE)
 
-    print("[Learner] Conhecimento aprendido:", knowledge["id"])
+    print("[Learner] Conhecimento salvo:", knowledge["id"])
 
 # =========================
-# FUNÇÃO: FEEDBACK DO USUÁRIO
+# REFORÇO HUMANO
 # =========================
 
 def reinforce(knowledge_id: str, positive: bool = True):
     """
-    Ajusta confiança baseado no feedback humano.
+    Ajusta confiança com base no feedback humano.
     """
     for item in MEMORY_STORE:
         if item["id"] == knowledge_id:
@@ -131,17 +122,14 @@ def reinforce(knowledge_id: str, positive: bool = True):
                 item["confidence"] = max(0.0, item["confidence"] - 0.1)
             break
 
+    save_memory(MEMORY_STORE)
+
 # =========================
 # TESTE ISOLADO
 # =========================
 
 if __name__ == "__main__":
-    sample = {
-        "type": "text",
-        "data": "Botão iniciar",
-        "confidence": 0.7
-    }
-
+    sample = {"type": "text", "data": "Botão iniciar", "confidence": 0.7}
     decision = decide(sample)
 
     if decision["action"] == "learn":
