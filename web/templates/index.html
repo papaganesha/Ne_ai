@@ -24,7 +24,11 @@
     <h2>Conhecimento Aprendido</h2>
     <ul>
         {% for item in memory %}
-            <li>{{ item.id }} - {{ item.type }} - Confiança: {{ item.confidence }}</li>
+            <li>
+                {{ item.id }} - {{ item.type }} - Confiança: {{ item.confidence }}
+                [<a href="/feedback/{{ item.id }}/positive">👍</a>]
+                [<a href="/feedback/{{ item.id }}/negative">👎</a>]
+            </li>
         {% endfor %}
     </ul>
 </body>
