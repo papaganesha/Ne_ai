@@ -1,34 +1,39 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <title>NE-AI V1 Interface</title>
+
+    <!-- Script principal da interface -->
     <script src="/static/app.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        textarea { width: 400px; height: 100px; }
-        input[type=file] { margin-top: 10px; }
-        button { margin-top: 10px; margin-right: 10px; }
-        .memory-item { border: 1px solid #ccc; padding: 5px; margin-bottom: 5px; }
-        .feedback-btn { cursor: pointer; margin-left: 5px; }
-    </style>
+
+    <!-- CSS externo -->
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <h1>NE-AI V1 Interface</h1>
 
+    <!-- Controle de envio de texto -->
     <h2>Enviar Texto</h2>
-    <textarea id="text_input"></textarea><br>
+    <textarea id="text_input" placeholder="Digite algo para aprendizado ou execução"></textarea><br>
     <button onclick="uploadText()">Enviar Texto</button>
     <button onclick="executeIntent()">Executar Intenção</button>
 
+    <!-- Upload de arquivos -->
     <h2>Upload de Arquivo</h2>
     <input type="file" id="file_input">
     <button onclick="uploadFile()">Enviar Arquivo</button>
 
+    <!-- Controle de streaming -->
     <h2>Controle de Streaming</h2>
     <button onclick="executeCommand('iniciar')">Iniciar Streaming</button>
     <button onclick="executeCommand('parar')">Parar Streaming</button>
 
+    <!-- Status geral do sistema -->
+    <h2>Status do Sistema</h2>
+    <div id="status">Carregando...</div>
+
+    <!-- Memória aprendida -->
     <h2>Memória Aprendida</h2>
     <div id="memory_container"></div>
 </body>
