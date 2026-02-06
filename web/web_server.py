@@ -1,91 +1,91 @@
 """
-Servidor web do NE-AI V1 usando Flask.
+NE-AI V1 — Web Server
+=======================
 
-Funcionalidades:
-- Upload de arquivos (texto, imagem, vídeo)
-- Início/parada do streaming da tela
-- Visualização da memória aprendida
-- Feedback humano (positivo/negativo)
+Servidor web simples para receber uploads e interagir com NE-AI V1:
+
+- Recebe arquivos via POST (texto, imagem, vídeo)
+- Envia para inputs/upload_handler para processamento
+- Integra com learner, history e executor
+- Fornece endpoints para status e teste
 """
 
-from flask import Flask, request, render_template, jsonify
-from inputs.upload_handler import save_upload, handle_text_upload
-from inputs.video_stream import video_to_frames
-from cognition.learner import MEMORY_STORE, reinforce
-from agent.decision import agent_decision
-from agent.intent import detect_intent
-from agent.policy import apply_policy
-from agent.executor import execute
+# =========================
+# IMPORTAÇÕES
+# =========================
+from flask import Flask, request, jsonify
+from inputs.upload_handler import handle_upload
+from agent.decision import decide_action
+from agent.intent import extract_intent
+from agent.executor import execute_action
+import os
 
-def create_app():
-    app = Flask(__name__, template_folder="../web/templates", static_folder="../web/static")
+# =========================
+# CONFIGURAÇÃO
+# =========================
+app = Flask(__name__)
 
-    @app.route("/")
-    def index():
-        # Página principal, exibe memória e interface de controle
-        return render_template("index.html", memory=MEMORY_STORE)
+# Pasta temporária para uploads antes do processamento
+UPLOAD_TEMP = "./storage/tmp"
+os.makedirs(UPLOAD_TEMP, exist_ok=True)
 
-    @app.route("/upload_text", methods=["POST"])
-    def upload_text():
-        # Recebe texto do usuário via formulário
-        text_data = request.form.get("text")
-        if not text_data:
-            return jsonify({"error": "No text provided"}), 400
+# =========================
+# ENDPOINTS PRINCIPAIS
+# =========================
 
-        # Reaproveitando handle_text_upload existente
-        processed = handle_text_upload(text_data)
-        decision = agent_decision(processed)
-        return jsonify(decision)
+@app.route("/")
+def index():
+    return "NE-AI V1 Web Server Online"
 
-    @app.route("/upload_file", methods=["POST"])
-    def upload_file():
-        # Recebe upload de arquivo (imagem ou vídeo)
-        if 'file' not in request.files:
-            return jsonify({"error": "No file part"}), 400
+@app.route("/upload", methods=["POST"])
+def upload_file():
+    """
+    Recebe upload via POST e processa.
+    Espera campo 'file' no form-data.
+    """
+    if "file" not in request.files:
+        return jsonify({"status": "error", "message": "Nenhum arquivo enviado"}), 400
 
-        file = request.files['file']
-        filename = file.filename
-        if not filename:
-            return jsonify({"error": "No selected file"}), 400
+    uploaded_file = request.files["file"]
+    if uploaded_file.filename == "":
+        return jsonify({"status": "error", "message": "Nome de arquivo vazio"}), 400
 
-        # Reaproveitando save_upload
-        saved_path = save_upload(file.read(), filename)
+    # Salva temporariamente
+    temp_path = os.path.join(UPLOAD_TEMP, uploaded_file.filename)
+    uploaded_file.save(temp_path)
 
-        # Se for vídeo, reaproveita video_to_frames
-        if filename.lower().endswith((".mp4", ".avi", ".mov")):
-            for frame_event in video_to_frames(saved_path):
-                # Reaproveitando agent_decision
-                agent_decision(frame_event)
+    # Processa upload (learner, history, vectorizer)
+    handle_upload(temp_path, uploaded_file.filename)
 
-        return jsonify({"status": "uploaded", "filename": filename})
+    return jsonify({"status": "success", "message": f"Arquivo {uploaded_file.filename} processado"}), 200
 
-    @app.route("/execute_intent", methods=["POST"])
-    def execute_intent_route():
-        # Recebe texto de comando e executa via agente
-        text_data = request.form.get("text")
-        if not text_data:
-            return jsonify({"error": "No text provided"}), 400
+@app.route("/action_text", methods=["POST"])
+def action_text():
+    """
+    Recebe texto para NE-AI V1 e executa ação completa.
+    """
+    data = request.json
+    text = data.get("text", "")
 
-        # Reaproveita fluxo de processamento existente
-        processed = {"type": "text", "data": text_data, "confidence": 0.7}
-        intent = detect_intent(processed)
-        action_dict = apply_policy(intent)
-        execute(action_dict)
-        return jsonify({"intent": intent, "action": action_dict})
+    if not text:
+        return jsonify({"status": "error", "message": "Texto vazio"}), 400
 
-    @app.route("/feedback", methods=["POST"])
-    def feedback():
-        # Recebe feedback humano para reforço
-        knowledge_id = request.form.get("id")
-        positive = request.form.get("positive") == "true"
-        if knowledge_id:
-            reinforce(knowledge_id, positive)
-            return jsonify({"status": "feedback_received", "id": knowledge_id})
-        return jsonify({"error": "No knowledge id provided"}), 400
+    # Decision → Intent → Executor
+    decision_payload = decide_action({"type": "text", "data": text})
+    intent_payload = extract_intent(decision_payload.get("payload", {}))
+    execute_action(intent_payload)
 
-    @app.route("/memory", methods=["GET"])
-    def memory_view():
-        # Retorna memória completa para visualização
-        return jsonify(MEMORY_STORE)
+    return jsonify({"status": "success", "intent": intent_payload.get("intent")})
 
-    return app
+# =========================
+# ENDPOINT DE STATUS
+# =========================
+@app.route("/status", methods=["GET"])
+def status():
+    return jsonify({"status": "online", "uploads_temp": len(os.listdir(UPLOAD_TEMP))})
+
+# =========================
+# RODAR SERVIDOR
+# =========================
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
