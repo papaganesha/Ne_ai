@@ -1,0 +1,36 @@
+/* Estilo principal da interface NE-AI V1 */
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+textarea {
+    width: 400px;
+    height: 100px;
+}
+
+input[type=file] {
+    margin-top: 10px;
+}
+
+button {
+    margin-top: 10px;
+    margin-right: 10px;
+}
+
+.memory-item {
+    border: 1px solid #ccc;
+    padding: 5px;
+    margin-bottom: 5px;
+}
+
+.feedback-btn {
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+#status {
+    margin-top: 15px;
+    font-weight: bold;
+}
