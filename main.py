@@ -16,9 +16,9 @@ Ponto de entrada do sistema NE-AI V1:
 # =========================
 import os
 from memory.store import load_memory, save_memory
-from memory.history import init_history
-from core.config import STORAGE_RAW, STORAGE_PROCESSED, STORAGE_TMP, MEMORY_FILE
-from api.web_server import app  # Servidor Flask
+from memory.history import load_history
+from core.config import STORAGE_RAW, STORAGE_PROCESSED, MEMORY_FILE
+from web.web_server import app  # Servidor Flask
 
 # =========================
 # FUNÇÃO DE INICIALIZAÇÃO

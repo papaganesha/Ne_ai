@@ -1,7 +1,8 @@
-flask==2.3.5
+Flask==2.3.3
 opencv-python==4.8.1.78
 pytesseract==0.3.10
-numpy==1.26.5
-requests==2.32.1
-python-dotenv==1.0.0
-Pillow==10.0.1
+numpy==1.24.4
+Pillow==10.1.0
+flask-ngrok==0.0.25
+pyngrok==6.3.0
+python-dotenv==1.0.1
